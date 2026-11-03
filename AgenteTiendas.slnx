@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="AgenteTiendas/AgenteTiendas.csproj" />
+  <Project Path="MonitoreoTiendas.Api/MonitoreoTiendas.Api.csproj" Id="c2c3c782-d92b-4bdd-b7f3-0c55572e00b0" />
+  <Project Path="MonitoreoTiendas.Web/MonitoreoTiendas.Web.csproj" Id="e9050ce7-f297-43d2-881c-f0a7979e9923" />
+</Solution>

@@ -1,0 +1,305 @@
+﻿@page
+@model MonitoreoTiendas.Web.Pages.IndexModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="refresh" content="30" />
+    <title>Monitoreo de tiendas | Curlingtech</title>
+
+    <style>
+            :root {
+                font-family: "Segoe UI", Arial, sans-serif;
+                color: #172b3a;
+                background: #f3f6f8;
+            }
+
+            * { box-sizing: border-box; }
+
+            body {
+                margin: 0;
+                background: #f3f6f8;
+            }
+
+            header {
+                background: #123047;
+                color: white;
+                padding: 22px max(24px, calc((100% - 1180px) / 2));
+            }
+
+            .brand {
+                color: #63d1c4;
+                font-size: 13px;
+                font-weight: 700;
+                letter-spacing: 2px;
+            }
+
+            h1 {
+                margin: 8px 0 4px;
+                font-size: 27px;
+            }
+
+            header p {
+                margin: 0;
+                color: #c6d4de;
+            }
+
+            main {
+                max-width: 1180px;
+                margin: 28px auto;
+                padding: 0 22px;
+            }
+
+            .summary {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 14px;
+                margin-bottom: 22px;
+            }
+
+            .card, .panel {
+                background: white;
+                border: 1px solid #e1e8ed;
+                border-radius: 12px;
+                box-shadow: 0 3px 12px #19364b0a;
+            }
+
+            .card {
+                padding: 18px 20px;
+            }
+
+            .card-label {
+                color: #647887;
+                font-size: 14px;
+            }
+
+            .card-number {
+                display: block;
+                margin-top: 6px;
+                font-size: 28px;
+                font-weight: 700;
+            }
+
+            .panel {
+                overflow: hidden;
+            }
+
+            .panel-heading {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                padding: 18px 20px;
+                border-bottom: 1px solid #e8edf0;
+            }
+
+            h2 {
+                margin: 0;
+                font-size: 18px;
+            }
+
+            .updated {
+                color: #647887;
+                font-size: 13px;
+            }
+
+            .error {
+                margin: 18px;
+                padding: 14px;
+                border-radius: 8px;
+                color: #842029;
+                background: #f8d7da;
+            }
+
+            .empty {
+                padding: 32px 20px;
+                color: #647887;
+                text-align: center;
+            }
+
+            .table-wrap { overflow-x: auto; }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 760px;
+            }
+
+            th, td {
+                padding: 14px 18px;
+                border-bottom: 1px solid #edf1f3;
+                text-align: left;
+                vertical-align: middle;
+            }
+
+            th {
+                color: #647887;
+                background: #fbfcfd;
+                font-size: 12px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: .5px;
+            }
+
+            tbody tr:last-child td { border-bottom: 0; }
+
+            .store-name {
+                font-weight: 650;
+            }
+
+            .store-code, .muted {
+                display: block;
+                margin-top: 3px;
+                color: #718390;
+                font-size: 12px;
+            }
+
+            .status {
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+                padding: 6px 10px;
+                border-radius: 20px;
+                font-size: 12px;
+                font-weight: 700;
+                white-space: nowrap;
+            }
+
+            .status::before {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                background: currentColor;
+                content: "";
+            }
+
+            .playing { color: #167447; background: #e6f5ed; }
+            .no-signal { color: #8b6410; background: #fff4d8; }
+            .closed, .offline { color: #a33c3c; background: #fbeaea; }
+            .unknown { color: #5c6870; background: #edf0f2; }
+
+            footer {
+                max-width: 1180px;
+                margin: 18px auto 32px;
+                padding: 0 22px;
+                color: #718390;
+                font-size: 12px;
+            }
+
+            @@media (max-width: 760px) {
+                .summary { grid-template-columns: repeat(2, 1fr); }
+                header { padding: 20px 22px; }
+                h1 { font-size: 23px; }
+                .panel-heading { align-items: flex-start; flex-direction: column; }
+            }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand">CURLINGTECH</div>
+        <h1>Monitoreo de música en tiendas</h1>
+        <p>Estado de los reproductores Windows Media Player</p>
+    </header>
+
+    <main>
+        <section class="summary">
+            <div class="card">
+                <span class="card-label">Tiendas reportando</span>
+                <span class="card-number">@Model.Stores.Count</span>
+            </div>
+            <div class="card">
+                <span class="card-label">Reproduciendo</span>
+                <span class="card-number">@Model.PlayingCount</span>
+            </div>
+            <div class="card">
+                <span class="card-label">Sin señal de audio</span>
+                <span class="card-number">@Model.NoSignalCount</span>
+            </div>
+            <div class="card">
+                <span class="card-label">Sin comunicación</span>
+                <span class="card-number">@Model.OfflineCount</span>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2>Tiendas</h2>
+                <span class="updated">
+                    Actualizado: @Model.UpdatedAt.ToString("dd/MM/yyyy HH:mm:ss")
+                    · refresco cada 30 segundos
+                </span>
+            </div>
+
+            @if (Model.ErrorMessage is not null)
+            {
+                <div class="error">@Model.ErrorMessage</div>
+            }
+            else if (Model.Stores.Count == 0)
+            {
+                <div class="empty">
+                    Aún no hay reportes. Mantén la API y el agente ejecutándose.
+                </div>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tienda</th>
+                                <th>Estado</th>
+                                <th>Reproductor</th>
+                                <th>Windows</th>
+                                <th>Contenido</th>
+                                <th>Último reporte</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var store in Model.Stores)
+                            {
+                                var player = store.Report.Player;
+                                var title = string.IsNullOrWhiteSpace(player.Title)
+                                    ? "Sin título disponible"
+                                    : player.Title;
+
+                                <tr>
+                                    <td>
+                                        <span class="store-name">@store.Report.StoreName</span>
+                                        <span class="store-code">@store.Report.StoreCode</span>
+                                    </td>
+                                    <td>
+                                        <span class="status @Model.GetStatusClass(store)">
+                                            @Model.GetStatus(store)
+                                        </span>
+                                    </td>
+                                    <td>@player.PlayerName</td>
+                                    <td>@store.Report.WindowsEdition</td>
+                                    <td>
+                                        @title
+                                        @if (!string.IsNullOrWhiteSpace(player.Artist))
+                                        {
+                                            <span class="muted">@player.Artist</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @store.ReceivedAt.ToLocalTime().ToString("dd/MM HH:mm:ss")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+    </main>
+
+    <footer>
+        Curlingtech · La página se actualiza automáticamente cada 30 segundos.
+    </footer>
+</body>
+</html>
