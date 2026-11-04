@@ -2,5 +2,6 @@
   "Codigo": "PRUEBA-001",
   "Nombre": "Tienda de Curling",
   "IntervaloReporteSegundos": 30,
-  "UrlApi": "http://localhost:5080"
+  "UrlApi": "http://localhost:5080",
+  "DestinoMonitoreoRed": "github.com"
 }

@@ -6,4 +6,5 @@ public sealed class StoreConfiguration
     public string Nombre { get; set; } = "";
     public int IntervaloReporteSegundos { get; set; } = 30;
     public string UrlApi { get; set; } = "http://localhost:5080";
+    public string DestinoMonitoreoRed { get; set; } = "";
 }

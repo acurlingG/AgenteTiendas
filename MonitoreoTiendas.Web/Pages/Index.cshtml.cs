@@ -58,6 +58,64 @@ public sealed class IndexModel : PageModel
         };
     }
 
+    public string GetCpuSummary(StoreStatusDto store) =>
+    store.Report.Machine?.CpuUsagePercent is double cpu
+        ? $"{cpu:0.0}%"
+        : "N/D";
+
+    public string GetMemorySummary(StoreStatusDto store)
+    {
+        var machine = store.Report.Machine;
+
+        if (machine is null ||
+            !machine.TotalMemoryBytes.HasValue ||
+            machine.TotalMemoryBytes.Value == 0 ||
+            !machine.AvailableMemoryBytes.HasValue)
+        {
+            return "N/D";
+        }
+
+        var total = machine.TotalMemoryBytes.Value;
+        var used = total - Math.Min(total, machine.AvailableMemoryBytes.Value);
+        var percent = (double)used / total * 100;
+
+        return $"{percent:0}% ({ToGb(used):0.0}/{ToGb(total):0.0} GB)";
+    }
+
+    public string GetDiskSummary(StoreStatusDto store)
+    {
+        var disks = store.Report.Machine?.Disks;
+
+        if (disks is null || disks.Count == 0)
+            return "N/D";
+
+        return string.Join(" · ", disks.Select(disk =>
+            $"{disk.Drive}: {ToGb(disk.FreeBytes):0.0}/{ToGb(disk.TotalBytes):0.0} GB libres"));
+    }
+
+    public string GetNetworkSummary(StoreStatusDto store)
+    {
+        var network = store.Report.Network;
+
+        if (network is null || string.IsNullOrWhiteSpace(network.Target))
+            return "No configurado";
+
+        return network.IsReachable
+            ? $"OK · {network.Target} · {network.RoundtripTimeMs} ms"
+            : $"FAILED · {network.Target}";
+    }
+
+    public string GetNetworkClass(StoreStatusDto store) =>
+        store.Report.Network is null ||
+        string.IsNullOrWhiteSpace(store.Report.Network.Target)
+            ? "network-na"
+            : store.Report.Network.IsReachable
+                ? "network-ok"
+                : "network-failed";
+
+    private static double ToGb(ulong bytes) =>
+        bytes / 1024d / 1024 / 1024;
+
     public string GetStatusClass(StoreStatusDto store)
     {
         if (IsOffline(store))
@@ -73,6 +131,8 @@ public sealed class IndexModel : PageModel
             _ => "unknown"
         };
     }
+
+
 
     public int PlayingCount =>
         Stores.Count(store =>

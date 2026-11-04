@@ -127,7 +127,7 @@
             table {
                 width: 100%;
                 border-collapse: collapse;
-                min-width: 760px;
+                min-width: 1180;
             }
 
             th, td {
@@ -176,6 +176,30 @@
                 border-radius: 50%;
                 background: currentColor;
                 content: "";
+            }
+
+            .network-status {
+                display: inline-block;
+                border-radius: 14px;
+                padding: 5px 9px;
+                font-size: 12px;
+                font-weight: 700;
+                white-space: nowrap;
+            }
+
+            .network-ok {
+                color: #167447;
+                background: #e6f5ed;
+            }
+
+            .network-failed {
+                color: #a33c3c;
+                background: #fbeaea;
+            }
+
+            .network-na {
+                color: #5c6870;
+                background: #edf0f2;
             }
 
             .playing { color: #167447; background: #e6f5ed; }
@@ -255,17 +279,21 @@
                                 <th>Estado</th>
                                 <th>Reproductor</th>
                                 <th>Windows</th>
-                                <th>Contenido</th>
+                                <th>CPU</th>
+                                <th>Memoria</th>
+                                <th>Disco</th>
+                                <th>Dispositivo de red</th>
+                                @* <th>Contenido</th> *@
                                 <th>Último reporte</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var store in Model.Stores)
                             {
-                                var player = store.Report.Player;
+                                @* var player = store.Report.Player;
                                 var title = string.IsNullOrWhiteSpace(player.Title)
                                     ? "Sin título disponible"
-                                    : player.Title;
+                                    : player.Title; *@
 
                                 <tr>
                                     <td>
@@ -277,15 +305,24 @@
                                             @Model.GetStatus(store)
                                         </span>
                                     </td>
-                                    <td>@player.PlayerName</td>
+                                    <td>@store.Report.Player.PlayerName</td>
                                     <td>@store.Report.WindowsEdition</td>
+                                    <td>@Model.GetCpuSummary(store)</td>
+                                    <td>@Model.GetMemorySummary(store)</td>
+                                    <td>@Model.GetDiskSummary(store)</td>
                                     <td>
+                                        <span class="network-status @Model.GetNetworkClass(store)"
+                                              title="@(store.Report.Network?.Details ?? "Sin información")">
+                                            @Model.GetNetworkSummary(store)
+                                        </span>
+                                    </td>
+                                   @*  <td>
                                         @title
                                         @if (!string.IsNullOrWhiteSpace(player.Artist))
                                         {
                                             <span class="muted">@player.Artist</span>
                                         }
-                                    </td>
+                                    </td> *@
                                     <td>
                                         @store.ReceivedAt.ToLocalTime().ToString("dd/MM HH:mm:ss")
                                     </td>
