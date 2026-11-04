@@ -9,7 +9,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta http-equiv="refresh" content="30" />
+    <meta http-equiv="refresh" content="@(Model.Stores.Count == 0 ? "5" : "30")" />
     <title>Monitoreo de tiendas | Curlingtech</title>
 
     <style>
@@ -226,7 +226,7 @@
 <body>
     <header>
         <div class="brand">CURLINGTECH</div>
-        <h1>Monitoreo de música en tiendas</h1>
+        <h1>Monitoreo de Tiendas</h1>
         <p>Estado de los reproductores Windows Media Player</p>
     </header>
 
