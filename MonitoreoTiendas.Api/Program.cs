@@ -7,6 +7,8 @@ builder.Services.AddSingleton<ReportStore>();
 
 var app = builder.Build();
 
+app.UsePathBase("/backend");
+
 // Durante el desarrollo, la API escucha solo en esta computadora.
 app.Urls.Add("http://localhost:5080");
 
