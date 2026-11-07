@@ -7,10 +7,14 @@ namespace MonitoreoTiendas.Web.Pages;
 public sealed class IndexModel : PageModel
 {
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<IndexModel> _logger;
 
-    public IndexModel(IHttpClientFactory httpClientFactory)
+    public IndexModel(
+        IHttpClientFactory httpClientFactory,
+        ILogger<IndexModel> logger)
     {
         _httpClientFactory = httpClientFactory;
+        _logger = logger;
     }
 
     public List<StoreStatusDto> Stores { get; private set; } = [];
@@ -28,8 +32,9 @@ public sealed class IndexModel : PageModel
             Stores = await client.GetFromJsonAsync<List<StoreStatusDto>>(
                 "api/stores") ?? [];
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "No se pudo consultar la API de monitoreo.");
             ErrorMessage =
                 "No se pudo consultar la API. Confirma que MonitoreoTiendas.Api esté ejecutándose.";
         }
