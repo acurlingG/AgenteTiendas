@@ -9,6 +9,72 @@ public sealed class IndexModel : PageModel
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<IndexModel> _logger;
 
+
+    // Propiedad para la tarjeta de SLA Global
+    public double GlobalSlaPercent => Stores.Count > 0
+        ? Math.Round((double)PlayingCount / Stores.Count * 100, 1)
+        : 0;
+
+    // Lista dinámica de Alertas Preventivas
+    public List<string> SystemAlerts
+    {
+        get
+        {
+            var alerts = new List<string>();
+            foreach (var store in Stores)
+            {
+                var status = GetStatusClass(store);
+                if (status == "offline")
+                {
+                    alerts.Add($"🔴 CRÍTICO | {store.Report.StoreName} ({store.Report.StoreCode}) — Sin comunicación desde hace más de 15 minutos. Posible caída de red o energía.");
+                }
+                else if (status == "closed")
+                {
+                    alerts.Add($"⚠️ ADVERTENCIA | {store.Report.StoreName} ({store.Report.StoreCode}) — El reproductor de medios se encuentra cerrado.");
+                }
+
+                if (HasCpuWarning(store))
+                {
+                    alerts.Add($"⚠️ RECURSOS | {store.Report.StoreName} ({store.Report.StoreCode}) — CPU en nivel crítico ({store.Report.Machine?.CpuUsagePercent:F1}%). Riesgo de bloqueo.");
+                }
+                if (HasDiskWarning(store))
+                {
+                    alerts.Add($"⚠️ ALMACENAMIENTO | {store.Report.StoreName} ({store.Report.StoreCode}) — Disco principal con espacio bajo.");
+                }
+            }
+            return alerts;
+        }
+    }
+
+    // Evaluación de Umbrales
+    public bool HasCpuWarning(StoreStatusDto store) =>
+        store.Report.Machine?.CpuUsagePercent >= 90;
+
+    public bool HasRamWarning(StoreStatusDto store)
+    {
+        var machine = store.Report.Machine;
+
+        if (machine?.TotalMemoryBytes is not ulong total ||
+            total == 0 ||
+            machine.AvailableMemoryBytes is not ulong available)
+        {
+            return false;
+        }
+
+        var usedPercent = (double)(total - Math.Min(total, available)) / total * 100;
+        return usedPercent >= 85;
+    }
+
+    public bool HasDiskWarning(StoreStatusDto store)
+    {
+        var driveC = store.Report.Machine?.Disks?
+            .FirstOrDefault(disk => disk.Drive.StartsWith("C", StringComparison.OrdinalIgnoreCase));
+
+        return driveC is not null &&
+               driveC.TotalBytes > 0 &&
+               (double)driveC.FreeBytes / driveC.TotalBytes < 0.15;
+    }
+
     public IndexModel(
         IHttpClientFactory httpClientFactory,
         ILogger<IndexModel> logger)

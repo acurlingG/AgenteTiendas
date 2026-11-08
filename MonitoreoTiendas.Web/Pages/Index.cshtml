@@ -19,7 +19,9 @@
                 background: #f3f6f8;
             }
 
-            * { box-sizing: border-box; }
+            * {
+                box-sizing: border-box;
+            }
 
             body {
                 margin: 0;
@@ -55,14 +57,15 @@
                 padding: 0 22px;
             }
 
+            /* SLA & Cards Grid (5 Tarjetas) */
             .summary {
                 display: grid;
-                grid-template-columns: repeat(4, 1fr);
+                grid-template-columns: repeat(5, 1fr);
                 gap: 14px;
                 margin-bottom: 22px;
             }
 
-            .card, .panel {
+            .card, .panel, .alert-panel {
                 background: white;
                 border: 1px solid #e1e8ed;
                 border-radius: 12px;
@@ -75,7 +78,9 @@
 
             .card-label {
                 color: #647887;
-                font-size: 14px;
+                font-size: 13px;
+                font-weight: 700;
+                text-transform: uppercase;
             }
 
             .card-number {
@@ -84,6 +89,42 @@
                 font-size: 28px;
                 font-weight: 700;
             }
+
+            .card-subtext {
+                display: block;
+                margin-top: 4px;
+                font-size: 12px;
+                font-weight: 600;
+            }
+
+            /* Alert Panel */
+            .alert-panel {
+                border-left: 5px solid #d9534f;
+                padding: 16px 20px;
+                margin-bottom: 22px;
+                background: #fff8f8;
+            }
+
+            .alert-heading {
+                font-size: 14px;
+                font-weight: 700;
+                color: #a33c3c;
+                margin-bottom: 8px;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .alert-item {
+                font-size: 13px;
+                color: #2c3e50;
+                padding: 4px 0;
+                border-bottom: 1px dashed #f2d6d6;
+            }
+
+                .alert-item:last-child {
+                    border-bottom: 0;
+                }
 
             .panel {
                 overflow: hidden;
@@ -122,12 +163,14 @@
                 text-align: center;
             }
 
-            .table-wrap { overflow-x: auto; }
+            .table-wrap {
+                overflow-x: auto;
+            }
 
             table {
                 width: 100%;
                 border-collapse: collapse;
-                min-width: 1180;
+                min-width: 1180px;
             }
 
             th, td {
@@ -146,7 +189,18 @@
                 letter-spacing: .5px;
             }
 
-            tbody tr:last-child td { border-bottom: 0; }
+            tbody tr:last-child td {
+                border-bottom: 0;
+            }
+
+            /* Filas resaltadas por prioridad */
+            tr.priority-critical {
+                background-color: #fff5f5;
+            }
+
+            tr.priority-warning {
+                background-color: #fffdf0;
+            }
 
             .store-name {
                 font-weight: 650;
@@ -170,13 +224,13 @@
                 white-space: nowrap;
             }
 
-            .status::before {
-                width: 7px;
-                height: 7px;
-                border-radius: 50%;
-                background: currentColor;
-                content: "";
-            }
+                .status::before {
+                    width: 7px;
+                    height: 7px;
+                    border-radius: 50%;
+                    background: currentColor;
+                    content: "";
+                }
 
             .network-status {
                 display: inline-block;
@@ -185,6 +239,27 @@
                 font-size: 12px;
                 font-weight: 700;
                 white-space: nowrap;
+            }
+
+            /* Micro Badges para Umbrales */
+            .threshold-badge {
+                display: inline-block;
+                margin-top: 4px;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            .badge-danger {
+                color: #a33c3c;
+                background: #fbeaea;
+            }
+
+            .badge-warning {
+                color: #8b6410;
+                background: #fff4d8;
             }
 
             .network-ok {
@@ -202,10 +277,25 @@
                 background: #edf0f2;
             }
 
-            .playing { color: #167447; background: #e6f5ed; }
-            .no-signal { color: #8b6410; background: #fff4d8; }
-            .closed, .offline { color: #a33c3c; background: #fbeaea; }
-            .unknown { color: #5c6870; background: #edf0f2; }
+            .playing {
+                color: #167447;
+                background: #e6f5ed;
+            }
+
+            .no-signal {
+                color: #8b6410;
+                background: #fff4d8;
+            }
+
+            .closed, .offline {
+                color: #a33c3c;
+                background: #fbeaea;
+            }
+
+            .unknown {
+                color: #5c6870;
+                background: #edf0f2;
+            }
 
             footer {
                 max-width: 1180px;
@@ -215,11 +305,15 @@
                 font-size: 12px;
             }
 
-            @@media (max-width: 760px) {
-                .summary { grid-template-columns: repeat(2, 1fr); }
-                header { padding: 20px 22px; }
-                h1 { font-size: 23px; }
-                .panel-heading { align-items: flex-start; flex-direction: column; }
+            @@media (max-width: 900px) {
+                .summary {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+            @@media (max-width: 500px) {
+                .summary {
+                    grid-template-columns: 1fr;
+                }
             }
     </style>
 </head>
@@ -227,28 +321,52 @@
     <header>
         <div class="brand">CURLINGTECH</div>
         <h1>Monitoreo de Tiendas</h1>
-        <p>Estado de los reproductores Windows Media Player</p>
+        <p>Estado operativo de reproductores, salud de hardware y SLA global de red</p>
     </header>
 
     <main>
+        <!-- Tarjetas SLA y Métricas Sintéticas -->
         <section class="summary">
+            <div class="card">
+                <span class="card-label">SLA Disponibilidad</span>
+                <span class="card-number" style="color: #0d6efd;">@Model.GlobalSlaPercent%</span>
+                <span class="card-subtext" style="color: #198754;">🟢 Operación Evaluada</span>
+            </div>
             <div class="card">
                 <span class="card-label">Tiendas reportando</span>
                 <span class="card-number">@Model.Stores.Count</span>
+                <span class="card-subtext" style="color: #6c757d;">Total registradas</span>
             </div>
             <div class="card">
                 <span class="card-label">Reproduciendo</span>
                 <span class="card-number">@Model.PlayingCount</span>
+                <span class="card-subtext" style="color: #198754;">🟢 Transmisión activa</span>
             </div>
             <div class="card">
                 <span class="card-label">Sin señal de audio</span>
                 <span class="card-number">@Model.NoSignalCount</span>
+                <span class="card-subtext" style="color: #ffc107;">⚠️ Revisar audio</span>
             </div>
             <div class="card">
                 <span class="card-label">Sin comunicación</span>
-                <span class="card-number">@Model.OfflineCount</span>
+                <span class="card-number" style="color: #dc3545;">@Model.OfflineCount</span>
+                <span class="card-subtext" style="color: #dc3545;">🔴 Requieren atención</span>
             </div>
         </section>
+
+        <!-- Bloque de Alertas Tempranas (Visibilidad por Excepción) -->
+        @if (Model.SystemAlerts.Count > 0)
+        {
+            <section class="alert-panel">
+                <div class="alert-heading">
+                    🚨 ALERTAS DE PREVENCIÓN Y REACCIÓN (Acción Inmediata)
+                </div>
+                @foreach (var alert in Model.SystemAlerts)
+                {
+                    <div class="alert-item">@alert</div>
+                }
+            </section>
+        }
 
         <section class="panel">
             <div class="panel-heading">
@@ -283,19 +401,18 @@
                                 <th>Memoria</th>
                                 <th>Disco</th>
                                 <th>Dispositivo de red</th>
-                                @* <th>Contenido</th> *@
                                 <th>Último reporte</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var store in Model.Stores)
                             {
-                                @* var player = store.Report.Player;
-                                var title = string.IsNullOrWhiteSpace(player.Title)
-                                    ? "Sin título disponible"
-                                    : player.Title; *@
+                                bool isOffline = Model.GetStatusClass(store) == "offline";
+                                bool isClosed = Model.GetStatusClass(store) == "closed";
+                                bool hasResourceWarning = Model.HasCpuWarning(store) || Model.HasRamWarning(store) || Model.HasDiskWarning(store);
+                                string rowClass = isOffline || isClosed ? "priority-critical" : (hasResourceWarning ? "priority-warning" : "");
 
-                                <tr>
+                                <tr class="@rowClass">
                                     <td>
                                         <span class="store-name">@store.Report.StoreName</span>
                                         <span class="store-code">@store.Report.StoreCode</span>
@@ -307,22 +424,40 @@
                                     </td>
                                     <td>@store.Report.Player.PlayerName</td>
                                     <td>@store.Report.WindowsEdition</td>
-                                    <td>@Model.GetCpuSummary(store)</td>
-                                    <td>@Model.GetMemorySummary(store)</td>
-                                    <td>@Model.GetDiskSummary(store)</td>
+
+                                    <!-- CPU con indicador de Umbral -->
+                                    <td>
+                                        <div>@Model.GetCpuSummary(store)</div>
+                                        @if (Model.HasCpuWarning(store))
+                                        {
+                                            <span class="threshold-badge badge-danger">⚠️ Saturado</span>
+                                        }
+                                    </td>
+
+                                    <!-- Memoria con indicador de Umbral -->
+                                    <td>
+                                        <div>@Model.GetMemorySummary(store)</div>
+                                        @if (Model.HasRamWarning(store))
+                                        {
+                                            <span class="threshold-badge badge-warning">⚠️ Límite</span>
+                                        }
+                                    </td>
+
+                                    <!-- Disco C: con indicador de Umbral -->
+                                    <td>
+                                        <div>@Model.GetDiskSummary(store)</div>
+                                        @if (Model.HasDiskWarning(store))
+                                        {
+                                            <span class="threshold-badge badge-danger">⚠️ Crítico</span>
+                                        }
+                                    </td>
+
                                     <td>
                                         <span class="network-status @Model.GetNetworkClass(store)"
                                               title="@(store.Report.Network?.Details ?? "Sin información")">
                                             @Model.GetNetworkSummary(store)
                                         </span>
                                     </td>
-                                   @*  <td>
-                                        @title
-                                        @if (!string.IsNullOrWhiteSpace(player.Artist))
-                                        {
-                                            <span class="muted">@player.Artist</span>
-                                        }
-                                    </td> *@
                                     <td>
                                         @store.ReceivedAt.ToLocalTime().ToString("dd/MM HH:mm:ss")
                                     </td>

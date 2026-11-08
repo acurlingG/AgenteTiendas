@@ -2,6 +2,6 @@
   "Codigo": "PRUEBA-001",
   "Nombre": "Tienda de Curling",
   "IntervaloReporteSegundos": 30,
-   "UrlApi": "https://acurling-001-site1.ltempurl.com/backend",
+  "UrlApi": "https://acurling-001-site1.ltempurl.com/backend",
   "DestinoMonitoreoRed": "github.com"
 }
