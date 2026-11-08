@@ -292,6 +292,11 @@
                 background: #fbeaea;
             }
 
+            .not-required {
+                color: #5c6870;
+                background: #edf0f2;
+            }
+
             .unknown {
                 color: #5c6870;
                 background: #edf0f2;
@@ -303,6 +308,7 @@
                 padding: 0 22px;
                 color: #718390;
                 font-size: 12px;
+                text-align: center;
             }
 
             @@media (max-width: 900px) {
@@ -373,7 +379,7 @@
                 <h2>Tiendas</h2>
                 <span class="updated">
                     Actualizado: @Model.UpdatedAt.ToString("dd/MM/yyyy HH:mm:ss")
-                    · refresco cada 30 segundos
+                    · refresco cada @(Model.Stores.Count == 0 ? "5" : "30") segundos
                 </span>
             </div>
 
@@ -471,7 +477,14 @@
     </main>
 
     <footer>
-        Curlingtech · La página se actualiza automáticamente cada 30 segundos.
+        <div>Curlingtechnologies · Derechos reservados 2026</div>
+        <div>
+            Desarrollado por
+            <a href="https://www.facebook.com/CurlingTech/"
+               target="_blank"
+               rel="noopener noreferrer">Curlingtech</a>
+            · La página se actualiza automáticamente cada 30 segundos.
+        </div>
     </footer>
 </body>
 </html>

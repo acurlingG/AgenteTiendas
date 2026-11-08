@@ -52,7 +52,15 @@ public sealed class MonitoringAgent
             var cycleStarted = Stopwatch.GetTimestamp();
             var windows = _windowsDetector.Detect();
 
-            var playerTask = _playerDetector.DetectAsync();
+            var playerTask = _configuration.ActivoMusica
+                ? _playerDetector.DetectAsync()
+                : Task.FromResult(new PlayerStatus(
+                    PlayerName: "No requerido",
+                    IsOpen: false,
+                    State: PlaybackState.NotQueried,
+                    Title: "",
+                    Artist: "",
+                    Details: "El monitoreo de música está desactivado para esta máquina."));
             var machineTask = _systemMetricsDetector.DetectAsync();
             var networkTask = _networkDetector.CheckAsync(_networkTarget);
 
@@ -61,6 +69,7 @@ public sealed class MonitoringAgent
             var report = new AgentReport(
                 StoreCode: _configuration.Codigo,
                 StoreName: _configuration.Nombre,
+                ActivoMusica: _configuration.ActivoMusica,
                 WindowsVersion: windows.Version,
                 WindowsEdition: windows.Edition,
                 Player: playerTask.Result,
@@ -106,6 +115,16 @@ public sealed class MonitoringAgent
             var updatedTarget =
                 updatedConfiguration.DestinoMonitoreoRed.Trim();
 
+            if (_configuration.ActivoMusica != updatedConfiguration.ActivoMusica)
+            {
+                Console.WriteLine(
+                    $"Monitoreo de música actualizado: " +
+                    $"'{(_configuration.ActivoMusica ? "activo" : "inactivo")}' -> " +
+                    $"'{(updatedConfiguration.ActivoMusica ? "activo" : "inactivo")}'");
+
+                _configuration.ActivoMusica = updatedConfiguration.ActivoMusica;
+            }
+
             if (!string.Equals(
                     _networkTarget,
                     updatedTarget,
@@ -141,6 +160,8 @@ public sealed class MonitoringAgent
         Console.WriteLine($"Hora: {report.ReportedAt:yyyy-MM-dd HH:mm:ss}");
         Console.WriteLine(
             $"Tienda: {report.StoreName} ({report.StoreCode})");
+        Console.WriteLine(
+            $"Monitoreo de música: {(report.ActivoMusica ? "Activo" : "No requerido")}");
         Console.WriteLine(
             $"Windows: {report.WindowsEdition} ({report.WindowsVersion})");
         Console.WriteLine($"Reproductor: {report.Player.PlayerName}");

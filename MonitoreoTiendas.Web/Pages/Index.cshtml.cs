@@ -11,8 +11,11 @@ public sealed class IndexModel : PageModel
 
 
     // Propiedad para la tarjeta de SLA Global
-    public double GlobalSlaPercent => Stores.Count > 0
-        ? Math.Round((double)PlayingCount / Stores.Count * 100, 1)
+    public int ActiveMusicStores =>
+        Stores.Count(store => store.Report.ActivoMusica);
+
+    public double GlobalSlaPercent => ActiveMusicStores > 0
+        ? Math.Round((double)PlayingCount / ActiveMusicStores * 100, 1)
         : 0;
 
     // Lista dinámica de Alertas Preventivas
@@ -117,6 +120,9 @@ public sealed class IndexModel : PageModel
         if (IsOffline(store))
             return "Sin comunicación";
 
+        if (!store.Report.ActivoMusica)
+            return "No requiere monitoreo";
+
         if (!store.Report.Player.IsOpen)
             return "Reproductor cerrado";
 
@@ -191,6 +197,9 @@ public sealed class IndexModel : PageModel
     {
         if (IsOffline(store))
             return "offline";
+
+        if (!store.Report.ActivoMusica)
+            return "not-required";
 
         if (!store.Report.Player.IsOpen)
             return "closed";

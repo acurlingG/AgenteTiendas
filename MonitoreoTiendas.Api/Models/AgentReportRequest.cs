@@ -4,6 +4,7 @@ public sealed class AgentReportRequest
 {
     public string StoreCode { get; init; } = "";
     public string StoreName { get; init; } = "";
+    public bool ActivoMusica { get; init; } = true;
     public string WindowsVersion { get; init; } = "";
     public string WindowsEdition { get; init; } = "";
     public PlayerReportRequest? Player { get; init; }

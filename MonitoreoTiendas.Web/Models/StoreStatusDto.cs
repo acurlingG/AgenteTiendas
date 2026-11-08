@@ -10,6 +10,7 @@ public sealed class AgentReportDto
 {
     public string StoreCode { get; set; } = "";
     public string StoreName { get; set; } = "";
+    public bool ActivoMusica { get; set; } = true;
     public string WindowsVersion { get; set; } = "";
     public string WindowsEdition { get; set; } = "";
     public PlayerStatusDto Player { get; set; } = new();
