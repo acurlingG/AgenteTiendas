@@ -287,6 +287,11 @@
                 background: #fff4d8;
             }
 
+            .not-authorized {
+                color: #842029;
+                background: #f8d7da;
+            }
+
             .closed, .offline {
                 color: #a33c3c;
                 background: #fbeaea;
@@ -316,6 +321,7 @@
                     grid-template-columns: repeat(2, 1fr);
                 }
             }
+
             @@media (max-width: 500px) {
                 .summary {
                     grid-template-columns: 1fr;
@@ -327,7 +333,11 @@
     <header>
         <div class="brand">CURLINGTECH</div>
         <h1>Monitoreo de Tiendas</h1>
-        <p>Estado operativo de reproductores, salud de hardware y SLA global de red</p>
+        <p>
+            @(string.IsNullOrWhiteSpace(Model.SelectedCountry)
+                ? "Monitoreo internacional de todas las tiendas"
+                : $"Monitoreo de tiendas en {Model.SelectedCountry}")
+        </p>
     </header>
 
     <main>
@@ -359,6 +369,18 @@
                 <span class="card-subtext" style="color: #dc3545;">🔴 Requieren atención</span>
             </div>
         </section>
+
+        <form method="get" style="display: flex; align-items: center; gap: 10px; margin-bottom: 22px;">
+            <label for="pais" style="font-weight: 600; color: #647887;">Filtrar por país:</label>
+            <select id="pais" name="pais" onchange="this.form.submit()"
+                    style="padding: 8px 12px; border: 1px solid #d5dfe5; border-radius: 6px; background: white; color: #172b3a;">
+                <option value="" selected="@(string.IsNullOrWhiteSpace(Model.SelectedCountry) ? "selected" : null)">Todos los países</option>
+                @foreach (var country in Model.AvailableCountries)
+                {
+                    <option value="@country" selected="@(country.Equals(Model.SelectedCountry, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">@country</option>
+                }
+            </select>
+        </form>
 
         <!-- Bloque de Alertas Tempranas (Visibilidad por Excepción) -->
         @if (Model.SystemAlerts.Count > 0)
@@ -400,6 +422,7 @@
                         <thead>
                             <tr>
                                 <th>Tienda</th>
+                                <th>País</th>
                                 <th>Estado</th>
                                 <th>Reproductor</th>
                                 <th>Windows</th>
@@ -423,12 +446,31 @@
                                         <span class="store-name">@store.Report.StoreName</span>
                                         <span class="store-code">@store.Report.StoreCode</span>
                                     </td>
+                                    <td>@store.Report.Pais</td>
                                     <td>
                                         <span class="status @Model.GetStatusClass(store)">
                                             @Model.GetStatus(store)
                                         </span>
                                     </td>
-                                    <td>@store.Report.Player.PlayerName</td>
+                                    <td>
+                                        <div style="font-weight: 600;">@store.Report.Player.PlayerName</div>
+                                        @if (!string.IsNullOrWhiteSpace(store.Report.Player.Title))
+                                        {
+                                            <div style="font-size: 12px; color: #167447; margin-top: 3px; font-weight: 600;">
+                                                🎵 @store.Report.Player.Title
+                                                @if (!string.IsNullOrWhiteSpace(store.Report.Player.Artist))
+                                                {
+                                                    <span style="color: #647887; font-weight: normal;">— @store.Report.Player.Artist</span>
+                                                }
+                                            </div>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(store.Report.Player.Details))
+                                        {
+                                            <div class="muted" style="font-size: 11px; margin-top: 2px;">
+                                                ℹ️ @store.Report.Player.Details
+                                            </div>
+                                        }
+                                    </td>
                                     <td>@store.Report.WindowsEdition</td>
 
                                     <!-- CPU con indicador de Umbral -->

@@ -1,8 +1,10 @@
 {
   "Codigo": "PRUEBA-001",
   "Nombre": "Tienda de Curling",
+  "Pais": "Costa Rica",
   "IntervaloReporteSegundos": 30,
   "UrlApi": "http://localhost:5241/backend",
   "DestinoMonitoreoRed": "github.com",
-  "ActivoMusica": true
+  "ActivoMusica": true,
+  "RutaListaReproduccion": "C:\\Users\\CURLING\\Music\\Playlists\\Mi musica ejemplo.m3u8"
 } 

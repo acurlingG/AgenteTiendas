@@ -3,6 +3,7 @@
 public sealed record AgentReport(
     string StoreCode,
     string StoreName,
+    string Pais,
     bool ActivoMusica,
     string WindowsVersion,
     string WindowsEdition,

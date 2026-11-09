@@ -5,6 +5,7 @@ public enum PlaybackState
     NotFound,
     NotQueried,
     Playing,
+    NotAuthorized,
     NoSignal,
     Paused,
     Stopped,

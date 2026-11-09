@@ -35,6 +35,10 @@ public sealed class IndexModel : PageModel
                 {
                     alerts.Add($"⚠️ ADVERTENCIA | {store.Report.StoreName} ({store.Report.StoreCode}) — El reproductor de medios se encuentra cerrado.");
                 }
+                else if (status == "not-authorized")
+                {
+                    alerts.Add($"🚨 CONTENIDO NO AUTORIZADO | {store.Report.StoreName} ({store.Report.StoreCode}) — Se está reproduciendo contenido fuera de la lista configurada. {store.Report.Player.Details}");
+                }
 
                 if (HasCpuWarning(store))
                 {
@@ -87,6 +91,8 @@ public sealed class IndexModel : PageModel
     }
 
     public List<StoreStatusDto> Stores { get; private set; } = [];
+    public List<string> AvailableCountries { get; private set; } = [];
+    public string SelectedCountry { get; private set; } = "";
     public string? ErrorMessage { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
@@ -98,8 +104,27 @@ public sealed class IndexModel : PageModel
         {
             var client = _httpClientFactory.CreateClient("MonitorApi");
 
-            Stores = await client.GetFromJsonAsync<List<StoreStatusDto>>(
+            var allStores = await client.GetFromJsonAsync<List<StoreStatusDto>>(
                 "api/stores") ?? [];
+
+            AvailableCountries = allStores
+                .Select(store => store.Report.Pais.Trim())
+                .Where(country => !string.IsNullOrWhiteSpace(country))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(country => country)
+                .ToList();
+
+            SelectedCountry = Request.Query["pais"].ToString().Trim();
+            if (SelectedCountry.Equals("Todos", StringComparison.OrdinalIgnoreCase))
+                SelectedCountry = "";
+
+            Stores = string.IsNullOrWhiteSpace(SelectedCountry)
+                ? allStores
+                : allStores
+                    .Where(store => store.Report.Pais.Equals(
+                        SelectedCountry,
+                        StringComparison.OrdinalIgnoreCase))
+                    .ToList();
         }
         catch (Exception exception)
         {
@@ -129,6 +154,7 @@ public sealed class IndexModel : PageModel
         return store.Report.Player.State switch
         {
             "Playing" => "Reproduciendo",
+            "NotAuthorized" => "Contenido no autorizado",
             "NoSignal" => "Abierto sin señal",
             "NotFound" => "Reproductor no encontrado",
             _ => "Estado desconocido"
@@ -207,6 +233,7 @@ public sealed class IndexModel : PageModel
         return store.Report.Player.State switch
         {
             "Playing" => "playing",
+            "NotAuthorized" => "not-authorized",
             "NoSignal" => "no-signal",
             _ => "unknown"
         };

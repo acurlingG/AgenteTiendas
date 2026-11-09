@@ -53,14 +53,14 @@ public sealed class MonitoringAgent
             var windows = _windowsDetector.Detect();
 
             var playerTask = _configuration.ActivoMusica
-                ? _playerDetector.DetectAsync()
-                : Task.FromResult(new PlayerStatus(
-                    PlayerName: "No requerido",
-                    IsOpen: false,
-                    State: PlaybackState.NotQueried,
-                    Title: "",
-                    Artist: "",
-                    Details: "El monitoreo de música está desactivado para esta máquina."));
+    ? _playerDetector.DetectAsync(_configuration.RutaListaReproduccion)
+    : Task.FromResult(new PlayerStatus(
+        PlayerName: "No requerido",
+        IsOpen: false,
+        State: PlaybackState.NotQueried,
+        Title: "",
+        Artist: "",
+        Details: "El monitoreo de música está desactivado para esta máquina."));
             var machineTask = _systemMetricsDetector.DetectAsync();
             var networkTask = _networkDetector.CheckAsync(_networkTarget);
 
@@ -69,6 +69,7 @@ public sealed class MonitoringAgent
             var report = new AgentReport(
                 StoreCode: _configuration.Codigo,
                 StoreName: _configuration.Nombre,
+                Pais: _configuration.Pais,
                 ActivoMusica: _configuration.ActivoMusica,
                 WindowsVersion: windows.Version,
                 WindowsEdition: windows.Edition,
@@ -114,6 +115,22 @@ public sealed class MonitoringAgent
 
             var updatedTarget =
                 updatedConfiguration.DestinoMonitoreoRed.Trim();
+
+            _configuration.Pais = updatedConfiguration.Pais.Trim();
+
+            if (!string.Equals(
+                    _configuration.RutaListaReproduccion,
+                    updatedConfiguration.RutaListaReproduccion,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine(
+                    $"Ruta de lista actualizada: " +
+                    $"'{_configuration.RutaListaReproduccion}' -> " +
+                    $"'{updatedConfiguration.RutaListaReproduccion}'");
+
+                _configuration.RutaListaReproduccion =
+                    updatedConfiguration.RutaListaReproduccion;
+            }
 
             if (_configuration.ActivoMusica != updatedConfiguration.ActivoMusica)
             {

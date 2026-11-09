@@ -1,8 +1,10 @@
 ﻿using System.Diagnostics;
+using System.Xml.Linq;
 using System.Runtime.InteropServices;
 using AgenteTiendas.Models;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
+using Windows.Media.Control;
 using AgentPlaybackState = AgenteTiendas.Models.PlaybackState;
 
 namespace AgenteTiendas.Services;
@@ -16,7 +18,7 @@ public sealed class PlayerDetector
         ("mplayer2", "Windows Media Player antiguo")
     ];
 
-    public async Task<PlayerStatus> DetectAsync()
+    public async Task<PlayerStatus> DetectAsync(string? playlistConfigPath = null)
     {
         var openPlayers = FindOpenPlayers();
 
@@ -42,27 +44,41 @@ public sealed class PlayerDetector
                 Details: "La medición de audio requiere Windows 10 build 19041 o posterior.");
         }
 
-        // Se mide cada proceso. Así, un reproductor abierto pero en silencio
-        // no oculta a otro que sí está emitiendo audio.
-        var measurements = await Task.WhenAll(
-            openPlayers.Select(MeasureAudioAsync));
+        // 1. Medición de audio por proceso
+        var measurements = await Task.WhenAll(openPlayers.Select(MeasureAudioAsync));
 
-        var playing = measurements.FirstOrDefault(
-            result => result.HasSignal == true);
+        // 2. Obtención de metadatos y validación de Lista Definida
+        var (mediaTitle, mediaArtist, expectedPlaylist, isValidPlaylist) =
+            await GetMediaMetadataAsync(playlistConfigPath);
+
+        string detailMessage;
+        if (!string.IsNullOrWhiteSpace(expectedPlaylist))
+        {
+            detailMessage = isValidPlaylist
+                ? $"Lista autorizada activa ({expectedPlaylist})"
+                : $"⚠️ ALERTA: Lista o canción no autorizada. Lista esperada: {expectedPlaylist}";
+        }
+        else
+        {
+            detailMessage = "Se detectó señal de audio del reproductor.";
+        }
+
+        var playing = measurements.FirstOrDefault(result => result.HasSignal == true);
 
         if (playing is not null)
         {
             return new PlayerStatus(
                 PlayerName: playing.Player.DisplayName,
                 IsOpen: true,
-                State: AgentPlaybackState.Playing,
-                Title: "",
-                Artist: "",
-                Details: "Se detectó señal de audio del reproductor durante la medición.");
+                State: isValidPlaylist
+                    ? AgentPlaybackState.Playing
+                    : AgentPlaybackState.NotAuthorized,
+                Title: mediaTitle,
+                Artist: mediaArtist,
+                Details: detailMessage);
         }
 
-        var withoutSignal = measurements.FirstOrDefault(
-            result => result.HasSignal == false);
+        var withoutSignal = measurements.FirstOrDefault(result => result.HasSignal == false);
 
         if (withoutSignal is not null)
         {
@@ -70,24 +86,195 @@ public sealed class PlayerDetector
                 PlayerName: withoutSignal.Player.DisplayName,
                 IsOpen: true,
                 State: AgentPlaybackState.NoSignal,
-                Title: "",
-                Artist: "",
-                Details: "El reproductor está abierto, pero no se detectó señal de audio en 2 segundos. Puede estar pausado, detenido o reproduciendo silencio.");
+                Title: mediaTitle,
+                Artist: mediaArtist,
+                Details: "El reproductor está abierto pero no emite audio.");
         }
-
-        var errors = string.Join(
-            " | ",
-            measurements
-                .Where(result => result.Error is not null)
-                .Select(result => $"{result.Player.DisplayName}: {result.Error}"));
 
         return new PlayerStatus(
             PlayerName: JoinPlayerNames(openPlayers),
             IsOpen: true,
             State: AgentPlaybackState.Unknown,
-            Title: "",
-            Artist: "",
-            Details: $"Se encontraron reproductores abiertos, pero no se pudo medir su audio. {errors}");
+            Title: mediaTitle,
+            Artist: mediaArtist,
+            Details: "Se encontraron reproductores abiertos pero no se pudo medir su audio.");
+    }
+
+    private static async Task<(string Title, string Artist, string ExpectedPlaylist, bool IsValidPlaylist)> GetMediaMetadataAsync(string? playlistConfigPath)
+    {
+        string title = "";
+        string artist = "";
+        var playlistConfigured = !string.IsNullOrWhiteSpace(playlistConfigPath);
+        string expectedPlaylist = GetPlaylistNameFromPath(playlistConfigPath);
+        if (playlistConfigured && string.IsNullOrWhiteSpace(expectedPlaylist))
+            expectedPlaylist = playlistConfigPath!;
+
+        bool isValidPlaylist = !playlistConfigured;
+
+        try
+        {
+            var manager = await GlobalSystemMediaTransportControlsSessionManager.RequestAsync();
+            var currentSession = manager.GetCurrentSession();
+
+            if (currentSession is not null)
+            {
+                var mediaProperties = await currentSession.TryGetMediaPropertiesAsync();
+                title = mediaProperties.Title ?? "";
+                artist = mediaProperties.Artist ?? "";
+            }
+        }
+        catch
+        {
+            // Silenciar errores de consulta a GSMTC
+        }
+
+        // Si se configuró una lista específica, se valida la canción contra
+        // las entradas reales del archivo de reproducción.
+        if (!string.IsNullOrWhiteSpace(expectedPlaylist))
+        {
+            var entries = ReadPlaylistEntries(playlistConfigPath);
+            isValidPlaylist = entries.Count > 0 &&
+                              IsCurrentTrackInPlaylist(title, artist, entries);
+
+            artist = string.IsNullOrWhiteSpace(artist)
+                ? $"Lista: {expectedPlaylist}"
+                : artist;
+        }
+
+        return (title, artist, expectedPlaylist, isValidPlaylist);
+    }
+
+    private static bool IsCurrentTrackInPlaylist(
+        string title,
+        string artist,
+        IReadOnlyCollection<string> entries)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            return false;
+
+        var currentTitle = NormalizeTrackName(title);
+        var currentArtist = NormalizeTrackName(artist);
+
+        return entries.Any(entry =>
+        {
+            var normalizedEntry = NormalizeTrackName(entry);
+            var fileName = NormalizeTrackName(
+                Path.GetFileNameWithoutExtension(entry));
+
+            return normalizedEntry.Contains(currentTitle, StringComparison.OrdinalIgnoreCase) ||
+                   currentTitle.Contains(fileName, StringComparison.OrdinalIgnoreCase) ||
+                   (!string.IsNullOrWhiteSpace(currentArtist) &&
+                    normalizedEntry.Contains(currentArtist, StringComparison.OrdinalIgnoreCase) &&
+                    normalizedEntry.Contains(currentTitle, StringComparison.OrdinalIgnoreCase));
+        });
+    }
+
+    private static List<string> ReadPlaylistEntries(string? path)
+    {
+        var entries = new List<string>();
+
+        var playlistFile = ResolvePlaylistFile(path);
+
+        if (playlistFile is null)
+            return entries;
+
+        try
+        {
+            var extension = Path.GetExtension(playlistFile);
+
+            if (extension.Equals(".wpl", StringComparison.OrdinalIgnoreCase))
+            {
+                var document = XDocument.Load(playlistFile);
+
+                entries.AddRange(document.Descendants()
+                    .Where(element => element.Name.LocalName.Equals("media", StringComparison.OrdinalIgnoreCase))
+                    .Select(element => (string?)element.Attribute("src"))
+                    .Where(value => !string.IsNullOrWhiteSpace(value))
+                    .Select(value => value!));
+            }
+            else
+            {
+                foreach (var line in File.ReadLines(playlistFile))
+                {
+                    var value = line.Trim();
+
+                    if (string.IsNullOrWhiteSpace(value))
+                        continue;
+
+                    if (value.StartsWith("#EXTINF", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var separator = value.IndexOf(',');
+                        if (separator >= 0 && separator < value.Length - 1)
+                            entries.Add(value[(separator + 1)..].Trim());
+
+                        continue;
+                    }
+
+                    if (!value.StartsWith('#'))
+                        entries.Add(value);
+                }
+            }
+        }
+        catch
+        {
+            // Una lista inválida se considera no autorizada.
+        }
+
+        return entries;
+    }
+
+    private static string? ResolvePlaylistFile(string? path)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return null;
+
+            if (File.Exists(path))
+                return path;
+
+            if (!Directory.Exists(path))
+                return null;
+
+            return Directory.GetFiles(path)
+                .Where(file =>
+                    Path.GetExtension(file).Equals(".wpl", StringComparison.OrdinalIgnoreCase) ||
+                    Path.GetExtension(file).Equals(".m3u8", StringComparison.OrdinalIgnoreCase) ||
+                    Path.GetExtension(file).Equals(".m3u", StringComparison.OrdinalIgnoreCase) ||
+                    Path.GetExtension(file).Equals(".zpl", StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .FirstOrDefault();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string NormalizeTrackName(string value) =>
+        string.Join(' ', value
+            .Replace('_', ' ')
+            .Replace('-', ' ')
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        .Trim();
+
+    private static string GetPlaylistNameFromPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return "";
+
+        try
+        {
+            var playlistFile = ResolvePlaylistFile(path);
+            if (playlistFile is not null)
+                return Path.GetFileNameWithoutExtension(playlistFile);
+        }
+        catch
+        {
+            // Silenciar excepciones de archivo
+        }
+
+        return "";
     }
 
     private static List<OpenPlayer> FindOpenPlayers()
@@ -111,22 +298,17 @@ public sealed class PlayerDetector
             }
         }
 
-        return players
-            .DistinctBy(player => player.ProcessId)
-            .ToList();
+        return players.DistinctBy(player => player.ProcessId).ToList();
     }
 
-    private static async Task<AudioMeasurement> MeasureAudioAsync(
-        OpenPlayer player)
+    private static async Task<AudioMeasurement> MeasureAudioAsync(OpenPlayer player)
     {
         try
         {
             var signalDetected = 0;
 
             await using var recorder = await new WasapiRecorderBuilder()
-                .WithProcessLoopback(
-                    (uint)player.ProcessId,
-                    ProcessLoopbackMode.IncludeTargetProcessTree)
+                .WithProcessLoopback((uint)player.ProcessId, ProcessLoopbackMode.IncludeTargetProcessTree)
                 .WithFormat(WaveFormat.CreateIeeeFloatWaveFormat(44100, 2))
                 .BuildAsync();
 
@@ -148,17 +330,11 @@ public sealed class PlayerDetector
             await Task.Delay(TimeSpan.FromSeconds(2));
             recorder.StopRecording();
 
-            return new AudioMeasurement(
-                player,
-                HasSignal: Volatile.Read(ref signalDetected) == 1,
-                Error: null);
+            return new AudioMeasurement(player, HasSignal: Volatile.Read(ref signalDetected) == 1, Error: null);
         }
         catch (Exception exception)
         {
-            return new AudioMeasurement(
-                player,
-                HasSignal: null,
-                Error: exception.Message);
+            return new AudioMeasurement(player, HasSignal: null, Error: exception.Message);
         }
     }
 
@@ -166,9 +342,5 @@ public sealed class PlayerDetector
         string.Join(", ", players.Select(player => player.DisplayName).Distinct());
 
     private sealed record OpenPlayer(int ProcessId, string DisplayName);
-
-    private sealed record AudioMeasurement(
-        OpenPlayer Player,
-        bool? HasSignal,
-        string? Error);
+    private sealed record AudioMeasurement(OpenPlayer Player, bool? HasSignal, string? Error);
 }
