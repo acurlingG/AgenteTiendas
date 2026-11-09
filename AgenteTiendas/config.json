@@ -3,8 +3,8 @@
   "Nombre": "Tienda de Curling",
   "Pais": "Costa Rica",
   "IntervaloReporteSegundos": 30,
-  "UrlApi": "http://localhost:5241/backend",
+  "UrlApi": "https://acurling-001-site1.ltempurl.com/backend/",
   "DestinoMonitoreoRed": "github.com",
   "ActivoMusica": true,
-  "RutaListaReproduccion": "C:\\Users\\CURLING\\Music\\Playlists\\Mi musica ejemplo.m3u8"
+  "RutaListaReproduccion": "C:\\Users\\CURLING\\Music\\Playlists\\ListaMusicaTiendas.m3u8"
 } 
