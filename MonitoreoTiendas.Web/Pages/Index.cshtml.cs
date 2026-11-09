@@ -9,7 +9,6 @@ public sealed class IndexModel : PageModel
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<IndexModel> _logger;
 
-
     // Propiedad para la tarjeta de SLA Global
     public int ActiveMusicStores =>
         Stores.Count(store => store.Report.ActivoMusica);
@@ -17,6 +16,34 @@ public sealed class IndexModel : PageModel
     public double GlobalSlaPercent => ActiveMusicStores > 0
         ? Math.Round((double)PlayingCount / ActiveMusicStores * 100, 1)
         : 0;
+
+    // Métricas para Auditoría de Cumplimiento Publicitario
+    public double GetCompliancePercent(StoreStatusDto store)
+    {
+        if (!store.Report.ActivoMusica) return 100.0;
+
+        if (!IsOffline(store) &&
+            store.Report.Player.IsOpen &&
+            store.Report.Player.State == "Playing" &&
+            !store.Report.Player.Details.Contains("ALERTA", StringComparison.OrdinalIgnoreCase))
+        {
+            return 100.0;
+        }
+
+        return 0.0;
+    }
+
+    public double GlobalCompliancePercent
+    {
+        get
+        {
+            var activeStores = Stores.Where(s => s.Report.ActivoMusica).ToList();
+            if (activeStores.Count == 0) return 100.0;
+
+            var totalCompliance = activeStores.Sum(s => GetCompliancePercent(s));
+            return Math.Round(totalCompliance / activeStores.Count, 1);
+        }
+    }
 
     // Lista dinámica de Alertas Preventivas
     public List<string> SystemAlerts
@@ -162,9 +189,9 @@ public sealed class IndexModel : PageModel
     }
 
     public string GetCpuSummary(StoreStatusDto store) =>
-    store.Report.Machine?.CpuUsagePercent is double cpu
-        ? $"{cpu:0.0}%"
-        : "N/D";
+        store.Report.Machine?.CpuUsagePercent is double cpu
+            ? $"{cpu:0.0}%"
+            : "N/D";
 
     public string GetMemorySummary(StoreStatusDto store)
     {
@@ -238,8 +265,6 @@ public sealed class IndexModel : PageModel
             _ => "unknown"
         };
     }
-
-
 
     public int PlayingCount =>
         Stores.Count(store =>

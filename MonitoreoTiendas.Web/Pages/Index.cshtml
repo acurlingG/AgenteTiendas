@@ -9,14 +9,34 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta http-equiv="refresh" content="@(Model.Stores.Count == 0 ? "5" : "30")" />
     <title>Monitoreo de tiendas | Curlingtech</title>
 
     <style>
             :root {
-                font-family: "Segoe UI", Arial, sans-serif;
-                color: #172b3a;
-                background: #f3f6f8;
+                --bg-main: #f3f6f8;
+                --bg-card: #ffffff;
+                --bg-header: #123047;
+                --text-main: #172b3a;
+                --text-muted: #647887;
+                --border-color: #e1e8ed;
+                --table-header-bg: #fbfcfd;
+                --table-border: #edf1f3;
+                --input-bg: #ffffff;
+                --input-border: #d5dfe5;
+            }
+
+            /* Estilos Modo Oscuro (Dark Mode NOC) */
+            body.dark-mode {
+                --bg-main: #0b131e;
+                --bg-card: #152232;
+                --bg-header: #080e18;
+                --text-main: #e2e8f0;
+                --text-muted: #94a3b8;
+                --border-color: #233549;
+                --table-header-bg: #1a2a3d;
+                --table-border: #1e2d40;
+                --input-bg: #1e2d40;
+                --input-border: #334155;
             }
 
             * {
@@ -25,13 +45,21 @@
 
             body {
                 margin: 0;
-                background: #f3f6f8;
+                background: var(--bg-main);
+                color: var(--text-main);
+                font-family: "Segoe UI", Arial, sans-serif;
+                transition: background 0.3s ease, color 0.3s ease;
             }
 
             header {
-                background: #123047;
+                background: var(--bg-header);
                 color: white;
-                padding: 22px max(24px, calc((100% - 1180px) / 2));
+                padding: 18px max(24px, calc((100% - 1280px) / 2));
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 12px;
             }
 
             .brand {
@@ -42,34 +70,72 @@
             }
 
             h1 {
-                margin: 8px 0 4px;
-                font-size: 27px;
+                margin: 6px 0 2px;
+                font-size: 25px;
             }
 
             header p {
                 margin: 0;
                 color: #c6d4de;
+                font-size: 13px;
             }
 
+            /* Controles Kiosk / NOC (Header) */
+            .kiosk-controls {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                background: rgba(255, 255, 255, 0.08);
+                padding: 8px 12px;
+                border-radius: 8px;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+            }
+
+            .btn-noc {
+                background: #1e3a52;
+                color: #ffffff;
+                border: 1px solid #365875;
+                padding: 6px 12px;
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.2s;
+                text-decoration: none;
+            }
+
+                .btn-noc:hover {
+                    background: #284c6b;
+                }
+
+                .btn-noc.active {
+                    background: #0d6efd;
+                    border-color: #0d6efd;
+                    box-shadow: 0 0 8px rgba(13, 110, 253, 0.5);
+                }
+
             main {
-                max-width: 1180px;
+                max-width: 1280px;
                 margin: 28px auto;
                 padding: 0 22px;
             }
 
-            /* SLA & Cards Grid (5 Tarjetas) */
+            /* SLA & Cards Grid (6 Tarjetas) */
             .summary {
                 display: grid;
-                grid-template-columns: repeat(5, 1fr);
+                grid-template-columns: repeat(6, 1fr);
                 gap: 14px;
                 margin-bottom: 22px;
             }
 
             .card, .panel, .alert-panel {
-                background: white;
-                border: 1px solid #e1e8ed;
+                background: var(--bg-card);
+                border: 1px solid var(--border-color);
                 border-radius: 12px;
-                box-shadow: 0 3px 12px #19364b0a;
+                box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
             }
 
             .card {
@@ -77,8 +143,8 @@
             }
 
             .card-label {
-                color: #647887;
-                font-size: 13px;
+                color: var(--text-muted);
+                font-size: 12px;
                 font-weight: 700;
                 text-transform: uppercase;
             }
@@ -86,7 +152,7 @@
             .card-number {
                 display: block;
                 margin-top: 6px;
-                font-size: 28px;
+                font-size: 26px;
                 font-weight: 700;
             }
 
@@ -102,7 +168,7 @@
                 border-left: 5px solid #d9534f;
                 padding: 16px 20px;
                 margin-bottom: 22px;
-                background: #fff8f8;
+                background: rgba(217, 83, 79, 0.08);
             }
 
             .alert-heading {
@@ -115,11 +181,15 @@
                 gap: 6px;
             }
 
+            body.dark-mode .alert-heading {
+                color: #f87171;
+            }
+
             .alert-item {
                 font-size: 13px;
-                color: #2c3e50;
+                color: var(--text-main);
                 padding: 4px 0;
-                border-bottom: 1px dashed #f2d6d6;
+                border-bottom: 1px dashed rgba(217, 83, 79, 0.2);
             }
 
                 .alert-item:last-child {
@@ -136,7 +206,7 @@
                 justify-content: space-between;
                 gap: 12px;
                 padding: 18px 20px;
-                border-bottom: 1px solid #e8edf0;
+                border-bottom: 1px solid var(--border-color);
             }
 
             h2 {
@@ -145,7 +215,7 @@
             }
 
             .updated {
-                color: #647887;
+                color: var(--text-muted);
                 font-size: 13px;
             }
 
@@ -159,7 +229,7 @@
 
             .empty {
                 padding: 32px 20px;
-                color: #647887;
+                color: var(--text-muted);
                 text-align: center;
             }
 
@@ -170,19 +240,19 @@
             table {
                 width: 100%;
                 border-collapse: collapse;
-                min-width: 1180px;
+                min-width: 1280px;
             }
 
             th, td {
                 padding: 14px 18px;
-                border-bottom: 1px solid #edf1f3;
+                border-bottom: 1px solid var(--table-border);
                 text-align: left;
                 vertical-align: middle;
             }
 
             th {
-                color: #647887;
-                background: #fbfcfd;
+                color: var(--text-muted);
+                background: var(--table-header-bg);
                 font-size: 12px;
                 font-weight: 700;
                 text-transform: uppercase;
@@ -193,13 +263,21 @@
                 border-bottom: 0;
             }
 
-            /* Filas resaltadas por prioridad */
+            /* Filas por prioridad */
             tr.priority-critical {
                 background-color: #fff5f5;
             }
 
             tr.priority-warning {
                 background-color: #fffdf0;
+            }
+
+            body.dark-mode tr.priority-critical {
+                background-color: #2b1518;
+            }
+
+            body.dark-mode tr.priority-warning {
+                background-color: #2b2413;
             }
 
             .store-name {
@@ -209,7 +287,7 @@
             .store-code, .muted {
                 display: block;
                 margin-top: 3px;
-                color: #718390;
+                color: var(--text-muted);
                 font-size: 12px;
             }
 
@@ -241,7 +319,6 @@
                 white-space: nowrap;
             }
 
-            /* Micro Badges para Umbrales */
             .threshold-badge {
                 display: inline-block;
                 margin-top: 4px;
@@ -297,32 +374,69 @@
                 background: #fbeaea;
             }
 
-            .not-required {
+            .not-required, .unknown {
                 color: #5c6870;
                 background: #edf0f2;
             }
 
-            .unknown {
-                color: #5c6870;
-                background: #edf0f2;
+            /* Ajustes Modo Oscuro para Insignias */
+            body.dark-mode .playing {
+                color: #4ade80;
+                background: #143823;
+            }
+
+            body.dark-mode .no-signal {
+                color: #facc15;
+                background: #382d0d;
+            }
+
+            body.dark-mode .not-authorized {
+                color: #f87171;
+                background: #3d1719;
+            }
+
+            body.dark-mode .closed, body.dark-mode .offline {
+                color: #f87171;
+                background: #381416;
+            }
+
+            body.dark-mode .not-required, body.dark-mode .unknown, body.dark-mode .network-na {
+                color: #94a3b8;
+                background: #1e293b;
+            }
+
+            body.dark-mode .network-ok {
+                color: #4ade80;
+                background: #143823;
+            }
+
+            body.dark-mode .network-failed {
+                color: #f87171;
+                background: #381416;
             }
 
             footer {
-                max-width: 1180px;
+                max-width: 1280px;
                 margin: 18px auto 32px;
                 padding: 0 22px;
-                color: #718390;
+                color: var(--text-muted);
                 font-size: 12px;
                 text-align: center;
             }
 
-            @@media (max-width: 900px) {
+            @@media (max-width: 1100px) {
+                .summary {
+                    grid-template-columns: repeat(3, 1fr);
+                }
+            }
+
+            @@media (max-width: 650px) {
                 .summary {
                     grid-template-columns: repeat(2, 1fr);
                 }
             }
 
-            @@media (max-width: 500px) {
+            @@media (max-width: 450px) {
                 .summary {
                     grid-template-columns: 1fr;
                 }
@@ -331,17 +445,31 @@
 </head>
 <body>
     <header>
-        <div class="brand">CURLINGTECH</div>
-        <h1>Monitoreo de Tiendas</h1>
-        <p>
-            @(string.IsNullOrWhiteSpace(Model.SelectedCountry)
-                ? "Monitoreo internacional de todas las tiendas"
-                : $"Monitoreo de tiendas en {Model.SelectedCountry}")
-        </p>
+        <div>
+            <div class="brand">CURLINGTECH · NOC CONSOLE</div>
+            <h1>Monitoreo de Tiendas</h1>
+            <p>
+                @(string.IsNullOrWhiteSpace(Model.SelectedCountry)
+                    ? "Monitoreo internacional de todas las tiendas"
+                    : $"Monitoreo de tiendas en {Model.SelectedCountry}")
+            </p>
+        </div>
+
+        <div class="kiosk-controls">
+            <a href="http://localhost:5241/backend/api/stores/compliance-report" target="_blank" class="btn-noc">
+                📥 Exportar Auditoría (CSV)
+            </a>
+            <button id="btnDarkMode" class="btn-noc" onclick="toggleDarkMode()">
+                🌙 Modo Oscuro
+            </button>
+            <button id="btnRotation" class="btn-noc" onclick="toggleRotation()">
+                🔄 Auto-Rotación: OFF
+            </button>
+        </div>
     </header>
 
     <main>
-        <!-- Tarjetas SLA y Métricas Sintéticas -->
+        <!-- Tarjetas SLA, Auditoría y Métricas Sintéticas -->
         <section class="summary">
             <div class="card">
                 <span class="card-label">SLA Disponibilidad</span>
@@ -349,9 +477,14 @@
                 <span class="card-subtext" style="color: #198754;">🟢 Operación Evaluada</span>
             </div>
             <div class="card">
+                <span class="card-label">Cumplimiento Oficial</span>
+                <span class="card-number" style="color: #198754;">@Model.GlobalCompliancePercent%</span>
+                <span class="card-subtext" style="color: #198754;">📜 Lista autorizada</span>
+            </div>
+            <div class="card">
                 <span class="card-label">Tiendas reportando</span>
                 <span class="card-number">@Model.Stores.Count</span>
-                <span class="card-subtext" style="color: #6c757d;">Total registradas</span>
+                <span class="card-subtext" style="color: var(--text-muted);">Total registradas</span>
             </div>
             <div class="card">
                 <span class="card-label">Reproduciendo</span>
@@ -370,10 +503,11 @@
             </div>
         </section>
 
+        <!-- Filtro por País -->
         <form method="get" style="display: flex; align-items: center; gap: 10px; margin-bottom: 22px;">
-            <label for="pais" style="font-weight: 600; color: #647887;">Filtrar por país:</label>
+            <label for="pais" style="font-weight: 600; color: var(--text-muted);">Filtrar por país:</label>
             <select id="pais" name="pais" onchange="this.form.submit()"
-                    style="padding: 8px 12px; border: 1px solid #d5dfe5; border-radius: 6px; background: white; color: #172b3a;">
+                    style="padding: 8px 12px; border: 1px solid var(--input-border); border-radius: 6px; background: var(--input-bg); color: var(--text-main);">
                 <option value="" selected="@(string.IsNullOrWhiteSpace(Model.SelectedCountry) ? "selected" : null)">Todos los países</option>
                 @foreach (var country in Model.AvailableCountries)
                 {
@@ -401,7 +535,7 @@
                 <h2>Tiendas</h2>
                 <span class="updated">
                     Actualizado: @Model.UpdatedAt.ToString("dd/MM/yyyy HH:mm:ss")
-                    · refresco cada @(Model.Stores.Count == 0 ? "5" : "30") segundos
+                    · refresco automático cada 30s
                 </span>
             </div>
 
@@ -424,6 +558,7 @@
                                 <th>Tienda</th>
                                 <th>País</th>
                                 <th>Estado</th>
+                                <th>Cumplimiento SLA</th>
                                 <th>Reproductor</th>
                                 <th>Windows</th>
                                 <th>CPU</th>
@@ -440,6 +575,7 @@
                                 bool isClosed = Model.GetStatusClass(store) == "closed";
                                 bool hasResourceWarning = Model.HasCpuWarning(store) || Model.HasRamWarning(store) || Model.HasDiskWarning(store);
                                 string rowClass = isOffline || isClosed ? "priority-critical" : (hasResourceWarning ? "priority-warning" : "");
+                                double compliance = Model.GetCompliancePercent(store);
 
                                 <tr class="@rowClass">
                                     <td>
@@ -453,6 +589,20 @@
                                         </span>
                                     </td>
                                     <td>
+                                        @if (!store.Report.ActivoMusica)
+                                        {
+                                            <span class="status not-required">N/A</span>
+                                        }
+                                        else if (compliance == 100)
+                                        {
+                                            <span class="status network-ok">100% Autorizado</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status network-failed">0% No Autorizado</span>
+                                        }
+                                    </td>
+                                    <td>
                                         <div style="font-weight: 600;">@store.Report.Player.PlayerName</div>
                                         @if (!string.IsNullOrWhiteSpace(store.Report.Player.Title))
                                         {
@@ -460,7 +610,7 @@
                                                 🎵 @store.Report.Player.Title
                                                 @if (!string.IsNullOrWhiteSpace(store.Report.Player.Artist))
                                                 {
-                                                    <span style="color: #647887; font-weight: normal;">— @store.Report.Player.Artist</span>
+                                                    <span style="color: var(--text-muted); font-weight: normal;">— @store.Report.Player.Artist</span>
                                                 }
                                             </div>
                                         }
@@ -528,5 +678,84 @@
             · La página se actualiza automáticamente cada 30 segundos.
         </div>
     </footer>
+
+    <!-- Lógica de Cliente para Modo Oscuro y Auto-Rotación Kiosk -->
+    <script>
+            const availableCountries = @Html.Raw(Json.Serialize(Model.AvailableCountries));
+            let rotationTimer = null;
+            let isRotating = localStorage.getItem("noc_rotation") === "true";
+
+            // 1. Cargar persistencia de Modo Oscuro
+            if (localStorage.getItem("noc_theme") === "dark") {
+                document.body.classList.add("dark-mode");
+                document.getElementById("btnDarkMode").classList.add("active");
+            }
+
+            function toggleDarkMode() {
+                document.body.classList.toggle("dark-mode");
+                const isDark = document.body.classList.contains("dark-mode");
+                localStorage.setItem("noc_theme", isDark ? "dark" : "light");
+                document.getElementById("btnDarkMode").classList.toggle("active", isDark);
+            }
+
+            // 2. Control del Switch de Auto-Rotación por País
+            function toggleRotation() {
+                isRotating = !isRotating;
+                localStorage.setItem("noc_rotation", isRotating);
+                updateRotationButton();
+
+                if (isRotating) {
+                    startRotation();
+                } else {
+                    if (rotationTimer) clearTimeout(rotationTimer);
+                }
+            }
+
+            function updateRotationButton() {
+                const btn = document.getElementById("btnRotation");
+                if (isRotating) {
+                    btn.innerHTML = "🔄 Auto-Rotación: ON (15s)";
+                    btn.classList.add("active");
+                } else {
+                    btn.innerHTML = "🔄 Auto-Rotación: OFF";
+                    btn.classList.remove("active");
+                }
+            }
+
+            function startRotation() {
+                if (!availableCountries || availableCountries.length === 0) return;
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const currentCountry = urlParams.get('pais')?.trim() || "";
+
+                let nextIndex = -1;
+                if (currentCountry) {
+                    nextIndex = availableCountries.findIndex(c => c.toLowerCase() === currentCountry.toLowerCase());
+                }
+
+                nextIndex = nextIndex + 1; // Siguiente elemento en el ciclo
+
+                rotationTimer = setTimeout(() => {
+                    if (nextIndex >= availableCountries.length) {
+                        // Retornar a vista "Todos los países"
+                        window.location.href = window.location.pathname;
+                    } else {
+                        // Navegar al siguiente país
+                        window.location.href = window.location.pathname + "?pais=" + encodeURIComponent(availableCountries[nextIndex]);
+                    }
+                }, 15000); // Intervalo de 15 segundos entre vistas
+            }
+
+            // Inicialización al cargar la página
+            if (isRotating) {
+                updateRotationButton();
+                startRotation();
+            } else {
+                // Recargar estándar a los 30s en modo estático
+                setTimeout(() => {
+                    window.location.reload();
+                }, 30000);
+            }
+    </script>
 </body>
 </html>

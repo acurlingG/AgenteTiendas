@@ -1,3 +1,4 @@
+using System.Text;
 using MonitoreoTiendas.Api.Models;
 using MonitoreoTiendas.Api.Services;
 
@@ -59,6 +60,38 @@ app.MapPost(
 app.MapGet(
     "/api/stores",
     (ReportStore store) => Results.Ok(store.GetAll()));
+
+app.MapGet(
+    "/api/stores/compliance-report",
+    (ReportStore storeRepository) =>
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("FechaHora,CodigoTienda,NombreTienda,Pais,EstadoPlayer,Cancion,Artista,CumplimientoAutorizado,Detalles");
+
+        foreach (var store in storeRepository.GetAll())
+        {
+            foreach (var log in store.AuditLogs)
+            {
+                var fechaHora = log.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
+                var storeCode = store.Report.StoreCode.Replace("\"", "\"\"");
+                var storeName = store.Report.StoreName.Replace("\"", "\"\"");
+                var pais = store.Report.Pais.Replace("\"", "\"\"");
+                var state = log.State.Replace("\"", "\"\"");
+                var mediaTitle = log.MediaTitle.Replace("\"", "\"\"");
+                var mediaArtist = log.MediaArtist.Replace("\"", "\"\"");
+                var autorizado = log.IsAuthorized ? "SI" : "NO";
+                var details = log.Details.Replace("\"", "\"\"");
+
+                builder.AppendLine($"\"{fechaHora}\",\"{storeCode}\",\"{storeName}\",\"{pais}\",\"{state}\",\"{mediaTitle}\",\"{mediaArtist}\",\"{autorizado}\",\"{details}\"");
+            }
+        }
+
+        var csvBytes = Encoding.UTF8.GetBytes(builder.ToString());
+        return Results.File(
+            csvBytes,
+            "text/csv",
+            $"Reporte_Cumplimiento_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
+    });
 
 app.MapGet(
     "/api/stores/{code}",
