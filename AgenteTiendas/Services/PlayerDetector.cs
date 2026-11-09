@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using System.Globalization;
+using System.Text;
 using System.Xml.Linq;
 using System.Runtime.InteropServices;
 using AgenteTiendas.Models;
@@ -161,11 +163,15 @@ public sealed class PlayerDetector
             var fileName = NormalizeTrackName(
                 Path.GetFileNameWithoutExtension(entry));
 
-            return normalizedEntry.Contains(currentTitle, StringComparison.OrdinalIgnoreCase) ||
-                   currentTitle.Contains(fileName, StringComparison.OrdinalIgnoreCase) ||
-                   (!string.IsNullOrWhiteSpace(currentArtist) &&
-                    normalizedEntry.Contains(currentArtist, StringComparison.OrdinalIgnoreCase) &&
-                    normalizedEntry.Contains(currentTitle, StringComparison.OrdinalIgnoreCase));
+            var titleMatches = !string.IsNullOrWhiteSpace(currentTitle) &&
+                               (normalizedEntry.Contains(currentTitle, StringComparison.OrdinalIgnoreCase) ||
+                                currentTitle.Contains(fileName, StringComparison.OrdinalIgnoreCase));
+
+            var artistMatches = !string.IsNullOrWhiteSpace(currentArtist) &&
+                                (normalizedEntry.Contains(currentArtist, StringComparison.OrdinalIgnoreCase) ||
+                                 currentArtist.Contains(fileName, StringComparison.OrdinalIgnoreCase));
+
+            return titleMatches || artistMatches;
         });
     }
 
@@ -251,12 +257,20 @@ public sealed class PlayerDetector
         }
     }
 
-    private static string NormalizeTrackName(string value) =>
-        string.Join(' ', value
+    private static string NormalizeTrackName(string value)
+    {
+        var withoutDiacritics = string.Concat(
+            value.Normalize(NormalizationForm.FormD)
+                .Where(character =>
+                    CharUnicodeInfo.GetUnicodeCategory(character) !=
+                    UnicodeCategory.NonSpacingMark));
+
+        return string.Join(' ', withoutDiacritics
             .Replace('_', ' ')
             .Replace('-', ' ')
             .Split(' ', StringSplitOptions.RemoveEmptyEntries))
-        .Trim();
+            .Trim();
+    }
 
     private static string GetPlaylistNameFromPath(string? path)
     {
