@@ -179,8 +179,9 @@ public sealed class PlayerDetector
     {
         var entries = new List<string>();
 
-        var playlistFile = ResolvePlaylistFile(path);
-
+        // La validación debe utilizar exclusivamente el archivo indicado
+        // en config.json; nunca se deben mezclar otras playlists de la carpeta.
+        var playlistFile = File.Exists(path) ? path : null;
         if (playlistFile is null)
             return entries;
 
@@ -236,20 +237,7 @@ public sealed class PlayerDetector
             if (string.IsNullOrWhiteSpace(path))
                 return null;
 
-            if (File.Exists(path))
-                return path;
-
-            if (!Directory.Exists(path))
-                return null;
-
-            return Directory.GetFiles(path)
-                .Where(file =>
-                    Path.GetExtension(file).Equals(".wpl", StringComparison.OrdinalIgnoreCase) ||
-                    Path.GetExtension(file).Equals(".m3u8", StringComparison.OrdinalIgnoreCase) ||
-                    Path.GetExtension(file).Equals(".m3u", StringComparison.OrdinalIgnoreCase) ||
-                    Path.GetExtension(file).Equals(".zpl", StringComparison.OrdinalIgnoreCase))
-                .OrderByDescending(File.GetLastWriteTimeUtc)
-                .FirstOrDefault();
+            return File.Exists(path) ? path : null;
         }
         catch
         {

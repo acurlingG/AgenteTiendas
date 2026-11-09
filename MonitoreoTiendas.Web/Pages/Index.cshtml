@@ -121,6 +121,8 @@
                 max-width: 1280px;
                 margin: 28px auto;
                 padding: 0 22px;
+        flex: 1;
+        width: 100%;
             }
 
             /* SLA & Cards Grid (6 Tarjetas) */
@@ -423,6 +425,16 @@
                 font-size: 12px;
                 text-align: center;
             }
+    footer {
+        width: 100%;
+        margin: 18px 0 0;
+        padding: 18px 22px;
+        color: #ffffff;
+        background: #000000;
+        border-top: 2px solid #000000;
+        font-size: 12px;
+        text-align: center;
+    }
 
             @@media (max-width: 1100px) {
                 .summary {
@@ -456,7 +468,7 @@
         </div>
 
         <div class="kiosk-controls">
-            <a href="http://localhost:5241/backend/api/stores/compliance-report" target="_blank" class="btn-noc">
+            <a href="@Model.ComplianceReportUrl" target="_blank" class="btn-noc">
                 📥 Exportar Auditoría (CSV)
             </a>
             <button id="btnDarkMode" class="btn-noc" onclick="toggleDarkMode()">

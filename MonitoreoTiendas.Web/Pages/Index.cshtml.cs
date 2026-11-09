@@ -8,6 +8,7 @@ public sealed class IndexModel : PageModel
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<IndexModel> _logger;
+    private readonly IConfiguration _configuration;
 
     // Propiedad para la tarjeta de SLA Global
     public int ActiveMusicStores =>
@@ -111,10 +112,15 @@ public sealed class IndexModel : PageModel
 
     public IndexModel(
         IHttpClientFactory httpClientFactory,
-        ILogger<IndexModel> logger)
+        ILogger<IndexModel> logger,
+        IConfiguration configuration)
     {
-        _httpClientFactory = httpClientFactory;
-        _logger = logger;
+        _httpClientFactory = httpClientFactory
+            ?? throw new ArgumentNullException(nameof(httpClientFactory));
+        _logger = logger
+            ?? throw new ArgumentNullException(nameof(logger));
+        _configuration = configuration
+            ?? throw new ArgumentNullException(nameof(configuration));
     }
 
     public List<StoreStatusDto> Stores { get; private set; } = [];
@@ -122,6 +128,13 @@ public sealed class IndexModel : PageModel
     public string SelectedCountry { get; private set; } = "";
     public string? ErrorMessage { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
+
+    public string ComplianceReportUrl =>
+        new Uri(
+            new Uri(_configuration["ApiSettings:BaseUrl"]
+                ?? "http://localhost:5241/backend/"),
+            "api/stores/compliance-report")
+        .ToString();
 
     public async Task OnGetAsync()
     {
