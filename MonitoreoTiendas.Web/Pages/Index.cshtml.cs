@@ -240,6 +240,9 @@ public sealed class IndexModel : PageModel
     {
         var network = store.Report.Network;
 
+        if (IsOffline(store))
+            return "SIN COMUNICACIÓN";
+
         if (network is null || string.IsNullOrWhiteSpace(network.Target))
             return "No configurado";
 
@@ -248,13 +251,18 @@ public sealed class IndexModel : PageModel
             : $"FAILED · {network.Target}";
     }
 
-    public string GetNetworkClass(StoreStatusDto store) =>
-        store.Report.Network is null ||
-        string.IsNullOrWhiteSpace(store.Report.Network.Target)
-            ? "network-na"
-            : store.Report.Network.IsReachable
-                ? "network-ok"
-                : "network-failed";
+    public string GetNetworkClass(StoreStatusDto store)
+    {
+        if (IsOffline(store))
+            return "network-failed";
+
+        var network = store.Report.Network;
+
+        if (network is null || string.IsNullOrWhiteSpace(network.Target))
+            return "network-na";
+
+        return network.IsReachable ? "network-ok" : "network-failed";
+    }
 
     private static double ToGb(ulong bytes) =>
         bytes / 1024d / 1024 / 1024;
